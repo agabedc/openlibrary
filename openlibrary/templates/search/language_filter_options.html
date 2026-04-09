@@ -1,0 +1,147 @@
+$def with (language_facets, selected_languages=None, param_name='language', button_label=None, section='dropdown', form_id=None)
+
+$code:
+    def _s(v):
+        """Coerce template values to a stable string key."""
+        if v is None:
+            return ''
+        # Sandbox has no type/getattr/hasattr; str() is enough for query/facet values.
+        return str(v)
+
+    if selected_languages is None:
+        query = input(_method='get', _unicode=False)
+        selected_languages = query.get(param_name, [])
+    if selected_languages is None:
+        selected_languages = []
+    if not isinstance(selected_languages, list):
+        selected_languages = [selected_languages]
+    selected_languages = [
+        s.strip()
+        for v in selected_languages
+        for s in (_s(v).split(',') if v is not None else [])
+        if s.strip()
+    ]
+    button_label = button_label or _('Language')
+
+    def normalize_facet_row(row):
+        # Solr facets are always (value, label, count) lists or tuples — avoid getattr (not in sandbox).
+        if isinstance(row, list) and len(row) >= 3:
+            return row[0], row[1], row[2]
+        if len(row) >= 3:
+            return row[0], row[1], row[2]
+        return None, None, None
+
+    label_map = {
+        _s(value): _s(label)
+        for value, label, _count in (normalize_facet_row(row) for row in (language_facets or []))
+        if value and label
+    }
+
+    def is_selected(value):
+        return value and _s(value) in selected_languages
+
+    def without_selected(value):
+        sval = _s(value)
+        return [v for v in selected_languages if _s(v) != sval]
+
+    def with_selected(value):
+        sval = _s(value)
+        if sval in selected_languages:
+            return selected_languages
+        return selected_languages + [sval]
+
+    written_in_label = _('Written in')
+
+$if section == 'dropdown':
+  $if form_id:
+    $# Checkboxes + Apply submit author search form (no navigation until submit)
+    <span class="sort">
+      <details class="sort-dropper language-filter-dropper">
+        <summary class="tool-button">
+          <img src="/images/icons/icon_sort.png" alt="$_('Filter by')" width="9" height="11" />
+          $button_label
+          $if selected_languages:
+            : $len(selected_languages)
+        </summary>
+        <span class="sort-content">
+          <span class="sort-content-inner language-filter-dropper__options">
+            <a href="$changequery(page=None, **{param_name: None})" rel="nofollow" class="language-filter-all-languages">$_('All languages')</a>
+            $for row in (language_facets or []):
+              $ value, label, count = normalize_facet_row(row)
+              $if not value:
+                $continue
+              $ display = label or value
+              $if count is not None:
+                $ display = "%s (%s)" % (display, count)
+              <label class="language-filter-option $cond(is_selected(value), 'language-filter-option--selected', '')">
+                <input
+                    type="checkbox"
+                    name="language"
+                    value="$value"
+                    form="$form_id"
+                    $cond(is_selected(value), 'checked="checked"', '')
+                />
+                <span class="language-filter-option__text">$display</span>
+              </label>
+            <div class="language-filter-actions">
+              <button type="submit" class="tool-button" form="$form_id">$_('Apply filters')</button>
+            </div>
+          </span>
+        </span>
+      </details>
+    </span>
+  $else:
+    <span class="sort">
+      <details class="sort-dropper">
+        <summary class="tool-button">
+          <img src="/images/icons/icon_sort.png" alt="$_('Filter by')" width="9" height="11" />
+          $button_label
+          $if selected_languages:
+            : $len(selected_languages)
+        </summary>
+        <span class="sort-content">
+          <span class="sort-content-inner">
+            $if not selected_languages:
+              <a class="sort-selected">$_('All languages')</a>
+            $else:
+              <a href="$changequery(page=None, **{param_name: None})" rel="nofollow">$_('All languages')</a>
+
+            $for row in (language_facets or []):
+              $ value, label, count = normalize_facet_row(row)
+              $if not value:
+                $continue
+              $ display = label or value
+              $if count is not None:
+                $ display = "%s (%s)" % (display, count)
+              $if is_selected(value):
+                <a class="sort-selected"
+                   href="$changequery(page=None, **{param_name: (without_selected(value) or None)})"
+                   rel="nofollow"
+                >
+                  $display
+                </a>
+              $else:
+                <a href="$changequery(page=None, **{param_name: with_selected(value)})" rel="nofollow">$display</a>
+          </span>
+        </span>
+      </details>
+    </span>
+
+$if section == 'chips':
+    $if selected_languages:
+      <div class="author-search-language-chips">
+        <span class="author-search-language-chips__label">$_('Languages'):</span>
+        <div class="author-search-language-pills" role="group">
+          $for lang in selected_languages:
+            $ pill_label = label_map.get(_s(lang), _s(lang))
+            $ del_url = changequery(page=None, **{param_name: (without_selected(lang) or None)})
+            <span class="author-search-language-pill">
+              <span class="author-search-language-pill__name">$pill_label</span>
+              <a class="author-search-language-pill__remove"
+                 href="$del_url"
+                 rel="nofollow"
+                 aria-label="$_('Remove %(language)s', language=pill_label)"
+              >×</a>
+            </span>
+        </div>
+      </div>

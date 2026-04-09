@@ -511,7 +511,7 @@ class Author(models.Author):
         return self.key.split('/')[-1]
 
     def get_books(self, q=''):
-        i = web.input(sort='editions', page=1, rows=20, mode="")
+        i = web.input(sort='editions', page=1, rows=20, mode="", language=[])
         try:
             # safeguard from passing zero/negative offsets to solr
             page = max(1, int(i.page))
@@ -523,6 +523,7 @@ class Author(models.Author):
             page=page,
             rows=i.rows,
             has_fulltext=i.mode == "ebooks",
+            language=i.language,
             query=q,
             facet=True,
             request_label='AUTHOR_BOOKS_PAGE',

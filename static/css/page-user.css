@@ -230,4 +230,6 @@ textarea.toc-editor {
 @import "components/searchbox.css";
 /* Import styles for sort options */
 @import "components/sort-dropper.css";
+/* Language facet filter (author works search) */
+@import "components/language-filter.css";
 @import "components/pagination.css";

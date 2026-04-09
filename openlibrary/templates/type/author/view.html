@@ -117,7 +117,7 @@ $ show_librarian_extras = ctx.user and (ctx.user.is_admin() or ctx.user.is_libra
                     <span class="count smaller"><a href="/books/add?author=$page.key">$_('Add another?')</a></span>
                 </h2>
 
-                <form method="GET" class="olform pagesearchbox">
+                <form method="GET" class="olform pagesearchbox" id="author-works-search-form">
                     <input type="hidden" name="has_fulltext" value="true"/>
                     $if (query_param('sort')):
                       <input type="hidden" name="sort" value="$query_param('sort')"/>
@@ -131,6 +131,9 @@ $ show_librarian_extras = ctx.user and (ctx.user.is_admin() or ctx.user.is_libra
                     $if books_count > 1:
                         $:render_template("search/sort_options.html", books.sort, exclude='relevance', default_sort='editions')
 
+                    $if books_count > 0 and books.facet_counts and books.facet_counts.get('language'):
+                        $:render_template("search/language_filter_options.html", books.facet_counts.get('language'), section='dropdown', form_id='author-works-search-form')
+
                     $if books_count > 0:
                         $:render_template("search/layout_options.html", selected_layout=layout)
 
@@ -140,6 +143,9 @@ $ show_librarian_extras = ctx.user and (ctx.user.is_admin() or ctx.user.is_libra
                     $else:
                         <span>$:_('— Show <a href="%(url)s">everything</a> by this author?', url=changequery(mode='everything'))</span>
                 </div>
+
+                $if books_count > 0 and books.facet_counts and books.facet_counts.get('language'):
+                    $:render_template("search/language_filter_options.html", books.facet_counts.get('language'), section='chips')
 
                 $:macros.OlPagination(safeint(query_param('page'), default=1), ceil(books_count / 20))
 

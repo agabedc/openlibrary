@@ -834,12 +834,15 @@ def works_by_author(
     rows=100,
     facet=False,
     has_fulltext=False,
+    language: str | list[str] | None = None,
     query: str | None = None,
     request_label: SolrRequestLabel = 'UNLABELLED',
 ):
     param = {'q': query or '*:*'}
     if has_fulltext:
         param['has_fulltext'] = 'true'
+    if language:
+        param['language'] = language
 
     result = run_solr_query(
         WorkSearchScheme(),
@@ -854,6 +857,7 @@ def works_by_author(
                 "person_facet",
                 "place_facet",
                 "time_facet",
+                "language",
             ]
         ),
         request_label=request_label,
