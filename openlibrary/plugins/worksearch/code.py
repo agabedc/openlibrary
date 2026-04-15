@@ -841,8 +841,21 @@ def works_by_author(
     param = {'q': query or '*:*'}
     if has_fulltext:
         param['has_fulltext'] = 'true'
-    if language:
-        param['language'] = language
+    extra_params: list[tuple[str, Any]] = [
+        ('fq', f'author_key:{akey}'),
+        ('facet.limit', 25),
+        ('f.language.facet.limit', -1),
+    ]
+
+    # For author pages, selecting multiple languages should mean OR within the
+    # language field (match any selected language), not AND.
+    languages = language
+    if languages:
+        values = languages if isinstance(languages, list) else [languages]
+        values = [v for v in values if v]
+        if values:
+            or_clause = ' OR '.join(f'"{val}"' for val in values)
+            extra_params.append(('fq', f'language:({or_clause})'))
 
     result = run_solr_query(
         WorkSearchScheme(),
@@ -864,10 +877,7 @@ def works_by_author(
         fields=list(
             WorkSearchScheme.default_fetched_fields | {'editions', 'providers'}
         ),
-        extra_params=[
-            ('fq', f'author_key:{akey}'),
-            ('facet.limit', 25),
-        ],
+        extra_params=extra_params,
     )
 
     result.docs = [get_doc(doc) for doc in result.docs]
@@ -875,6 +885,43 @@ def works_by_author(
         [(work.get('editions') or [None])[0] or work for work in result.docs]
     )
     return result
+
+def author_language_facets(
+    akey: str,
+    has_fulltext: bool = False,
+    query: str | None = None,
+    request_label: SolrRequestLabel = 'UNLABELLED',
+) -> dict[str, list[tuple[str, str, int]]] | None:
+    """
+    Fetch language facet counts for an author *without* applying any language filter.
+
+    Cached (memcache) so author pages don't require an extra Solr query on every request.
+    """
+    # request_label is intentionally not part of the cache key
+    def compute(_akey: str, _has_fulltext: bool = False, _query: str | None = None):
+        param: dict[str, Any] = {'q': _query or '*:*'}
+        if _has_fulltext:
+            param['has_fulltext'] = 'true'
+
+        resp = run_solr_query(
+            WorkSearchScheme(),
+            param=param,
+            page=1,
+            rows=0,
+            facet=["language"],
+            request_label='AUTHOR_BOOKS_PAGE_LANGUAGE_FACETS',
+            # Keep this query lightweight; we only need facets.
+            fields=['key'],
+            extra_params=[
+                ('fq', f'author_key:{_akey}'),
+                ('f.language.facet.limit', -1),
+            ],
+        )
+        return resp.facet_counts
+
+    return cache.memcache_memoize(
+        compute, "author_language_facets", timeout=10 * 60, hash_args=True
+    )(akey, has_fulltext, query)
 
 
 def top_books_from_author(akey: str, rows=5) -> SearchResponse:

@@ -17,7 +17,7 @@ from openlibrary.core.models import Image
 from openlibrary.plugins.upstream import borrow
 from openlibrary.plugins.upstream.table_of_contents import TableOfContents
 from openlibrary.plugins.upstream.utils import MultiDict, get_identifier_config
-from openlibrary.plugins.worksearch.code import works_by_author
+from openlibrary.plugins.worksearch.code import author_language_facets, works_by_author
 from openlibrary.plugins.worksearch.search import get_solr
 from openlibrary.utils import dateutil  # noqa: F401 side effects may be needed
 from openlibrary.utils.isbn import (
@@ -512,22 +512,37 @@ class Author(models.Author):
 
     def get_books(self, q=''):
         i = web.input(sort='editions', page=1, rows=20, mode="", language=[])
+        languages = i.language
         try:
             # safeguard from passing zero/negative offsets to solr
             page = max(1, int(i.page))
         except ValueError:
             page = 1
-        return works_by_author(
+        result = works_by_author(
             self.get_olid(),
             sort=i.sort,
             page=page,
             rows=i.rows,
             has_fulltext=i.mode == "ebooks",
-            language=i.language,
+            language=languages,
             query=q,
             facet=True,
             request_label='AUTHOR_BOOKS_PAGE',
         )
+        # Replace (potentially language-filtered) facet counts with the full set
+        # of languages for this author so the dropdown stays complete.
+        full_facets = author_language_facets(
+            self.get_olid(),
+            has_fulltext=i.mode == "ebooks",
+            # Intentionally ignore the search query here so we always have a stable
+            # code->label mapping for selected language pills, even when the query
+            # narrows results to a subset of languages.
+            query=None,
+            request_label='AUTHOR_BOOKS_PAGE_LANGUAGE_FACETS',
+        )
+        if full_facets and result.facet_counts is not None and full_facets.get('language'):
+            result.facet_counts['language'] = full_facets['language']
+        return result
 
     def get_work_count(self):
         """Returns the number of works by this author."""

@@ -9,7 +9,9 @@ $code:
         return str(v)
 
     if selected_languages is None:
-        query = input(_method='get', _unicode=False)
+        # Ensure multi-value query params (e.g. ?language=eng&language=fre)
+        # are captured as a list, not just the first value.
+        query = input(_method='get', _unicode=False, **{param_name: []})
         selected_languages = query.get(param_name, [])
     if selected_languages is None:
         selected_languages = []
