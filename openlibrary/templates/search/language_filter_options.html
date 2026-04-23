@@ -133,17 +133,10 @@ $if section == 'chips':
     $if selected_languages:
       <div class="author-search-language-chips">
         <span class="author-search-language-chips__label">$_('Languages'):</span>
-        <div class="author-search-language-pills" role="group">
+        <ol-chip-group gap="small">
           $for lang in selected_languages:
             $ pill_label = label_map.get(_s(lang), _s(lang))
             $ del_url = changequery(page=None, **{param_name: (without_selected(lang) or None)})
-            <span class="author-search-language-pill">
-              <span class="author-search-language-pill__name">$pill_label</span>
-              <a class="author-search-language-pill__remove"
-                 href="$del_url"
-                 rel="nofollow"
-                 aria-label="$_('Remove %(language)s', language=pill_label)"
-              >×</a>
-            </span>
-        </div>
+            <ol-chip selected size="small" href="$del_url" accessible-label="$_('Remove %(language)s', language=pill_label)">$pill_label</ol-chip>
+        </ol-chip-group>
       </div>

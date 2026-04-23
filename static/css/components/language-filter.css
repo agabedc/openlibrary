@@ -3,15 +3,14 @@
  * (template: openlibrary/templates/search/language_filter_options.html)
  */
 
-/* Author page: language chips below sort/layout row (white ol-chips, Related-subjects style) */
+/* Author page: "Languages:" label + ol-chip-group row of selected language chips */
 .author-search-language-chips {
   display: flex;
-  flex-flow: row wrap;
+  flex-wrap: wrap;
   align-items: center;
   gap: 6px 8px;
   /* Tighter to toolbar above, more air before results list */
   margin: 4px 0 14px;
-  padding: 0;
 }
 
 .author-search-language-chips__label {
@@ -20,77 +19,11 @@
   font-weight: 600;
   line-height: 1.35;
   flex: 0 0 auto;
-  align-self: center;
-  margin: 0;
-  padding: 0;
 }
 
-/* Pills row next to “Languages:” — only the × link removes a filter (not the whole pill) */
-.author-search-language-chips > .author-search-language-pills {
-  display: inline-flex;
+.author-search-language-chips ol-chip-group {
   flex: 0 1 auto;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 4px;
-  min-width: 0;
   max-width: 100%;
-}
-
-.author-search-language-pill {
-  display: inline-flex;
-  align-items: center;
-  max-width: 100%;
-  padding: 4px 4px 4px 8px;
-  border: var(--border-width) solid var(--color-border-subtle);
-  border-radius: var(--border-radius-chip);
-  background: var(--white);
-  color: var(--dark-grey);
-  font-family: var(--font-family-button);
-  font-size: var(--font-size-label-medium);
-  line-height: var(--line-height-chip);
-  user-select: none;
-}
-
-.author-search-language-pill__name {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  max-width: 18rem;
-}
-
-.author-search-language-pill__remove {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  margin: -2px -2px -2px 4px;
-  padding: 2px 6px;
-  border-radius: var(--border-radius-chip);
-  color: var(--grey);
-  font-size: 1.1em;
-  font-weight: 700;
-  line-height: 1;
-  text-decoration: none;
-}
-
-.author-search-language-pill__remove:link,
-.author-search-language-pill__remove:visited,
-.author-search-language-pill__remove:hover,
-.author-search-language-pill__remove:active {
-  text-decoration: none;
-}
-
-@media (hover: hover) and (pointer: fine) {
-  .author-search-language-pill__remove:hover {
-    background: var(--lightest-grey);
-    color: var(--black);
-    text-decoration: none;
-  }
-}
-
-.author-search-language-pill__remove:focus-visible {
-  outline: none;
-  box-shadow: var(--box-shadow-focus);
 }
 
 /* Author language dropdown: checkboxes + Apply (submits #author-works-search-form) */
